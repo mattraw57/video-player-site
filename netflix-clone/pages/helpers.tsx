@@ -1,10 +1,5 @@
 // Auth helpers
 
-export const addError = (params: AddErrorProps): void => {
-  const { setValidationErrors, error } = params;
-  setValidationErrors((currentErrors) => [...currentErrors, error]);
-};
-
 export const isEmail = (email: string) => {
   if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
     return true;
