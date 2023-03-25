@@ -62,7 +62,7 @@ const Auth = () => {
       .catch((error) => {
         console.log(error);
       });
-  }, [email, password]);
+  }, [email, password, router]);
 
   const register = useCallback(async () => {
     await axios
