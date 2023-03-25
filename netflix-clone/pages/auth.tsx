@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
-import { validateLogin, validateRegister } from "./helpers";
+import { validateLogin, validateRegister } from "../helpers";
 import { useRouter } from "next/router";
 import { Oval } from "react-loader-spinner";
 import { set } from "lodash";
