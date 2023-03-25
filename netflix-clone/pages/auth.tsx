@@ -32,68 +32,54 @@ const Auth = () => {
 
   const handleLogin = () => {
     const loginErrors = validateLogin(email, password);
-    setValidationErrors([]);
+
     setValidationErrors(loginErrors);
+    setNextAuthErrors([]);
     loginErrors.length === 0 && login();
   };
 
   const handleRegister = () => {
     const registerErrors = validateRegister(name, email, password);
-    setValidationErrors([]);
     setValidationErrors(registerErrors);
     registerErrors.length === 0 && register();
   };
 
   const login = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      }).then(({ ok, error }) => {
+    setIsLoading(true);
+    await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    })
+      .then((res) => {
         setIsLoading(false);
-        if (ok) {
-          router.push("/profiles");
+        if (!res?.ok) {
+          setNextAuthErrors([res?.error || ""]);
         } else {
-          // setNextAuthErrors(["Email or Password incorrect"]);
-          console.log(error);
+          router.push("/profiles");
         }
-        setValidationErrors([...validationErrors, error]);
+      })
+      .catch((error) => {
+        console.log(error);
       });
-    } catch (error) {
-      console.log(error);
-    }
   }, [email, password]);
 
   const register = useCallback(async () => {
-    try {
-      await axios
-        .post("/api/register", {
-          email,
-          name,
-          password,
-          redirect: false,
-        })
-        .then((res) => {
-          console.log(res);
-          login();
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-      //   setIsLoading(false);
-      //   if (ok) {
-      //     login();
-      //     router.push("/profiles");
-      //   } else {
-      //     console.log(error);
-      //     setNextAuthErrors(["An error occurred"]);
-      //   }
-      // });
-    } catch (error) {
-      console.log(error);
-    }
+    await axios
+      .post("/api/register", {
+        email,
+        name,
+        password,
+        redirect: false,
+        checkEmailExists: true,
+      })
+      .then((res) => {
+        login();
+      })
+      .catch((err) => {
+        console.log(err);
+        setNextAuthErrors([...nextAuthErrors, err.response.data.error || ""]);
+      });
   }, [login, email, name, password]);
 
   return (

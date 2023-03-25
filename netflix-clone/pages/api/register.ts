@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import { NextApiRequest, NextApiResponse } from "next";
 import prismadb from "@/lib/prismadb";
+import { validate } from "deep-email-validator";
 
 export default async function handler(
   req: NextApiRequest,
@@ -11,12 +12,17 @@ export default async function handler(
   }
 
   try {
-    const { email, name, password } = req.body;
+    const { email, name, password, checkEmailExists } = req.body;
     const existingUser = await prismadb.user.findUnique({
       where: {
         email,
       },
     });
+    checkEmailExists &&
+      (await validate(email || "").then((validatorRes) => {
+        if (!validatorRes.validators.smtp?.valid)
+          return res.status(422).json({ error: "Invalid email" });
+      }));
 
     if (existingUser) {
       return res.status(422).json({ error: "Email taken" });
