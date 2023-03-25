@@ -5,26 +5,61 @@ import { signIn } from "next-auth/react";
 
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
+import { validateLogin, validateRegister } from "./helpers";
+import { useRouter } from "next/router";
+import { Oval } from "react-loader-spinner";
+import { set } from "lodash";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [nextAuthErrors, setNextAuthErrors] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [variant, setVariant] = useState("login");
 
+  const router = useRouter();
+
   const toggleVariant = useCallback(() => {
+    setValidationErrors([]);
+    setNextAuthErrors([]);
     setVariant((currentVariant) =>
       currentVariant === "login" ? "register" : "login"
     );
   }, []);
 
+  const handleLogin = () => {
+    const loginErrors = validateLogin(email, password);
+    setValidationErrors([]);
+    setValidationErrors(loginErrors);
+    loginErrors.length === 0 && login();
+  };
+
+  const handleRegister = () => {
+    const registerErrors = validateRegister(name, email, password);
+    setValidationErrors([]);
+    setValidationErrors(registerErrors);
+    registerErrors.length === 0 && register();
+  };
+
   const login = useCallback(async () => {
     try {
+      setIsLoading(true);
       await signIn("credentials", {
         email,
         password,
-        callbackUrl: "/profiles",
+        redirect: false,
+      }).then(({ ok, error }) => {
+        setIsLoading(false);
+        if (ok) {
+          router.push("/profiles");
+        } else {
+          // setNextAuthErrors(["Email or Password incorrect"]);
+          console.log(error);
+        }
+        setValidationErrors([...validationErrors, error]);
       });
     } catch (error) {
       console.log(error);
@@ -33,12 +68,29 @@ const Auth = () => {
 
   const register = useCallback(async () => {
     try {
-      await axios.post("/api/register", {
-        email,
-        name,
-        password,
-      });
-      login();
+      await axios
+        .post("/api/register", {
+          email,
+          name,
+          password,
+          redirect: false,
+        })
+        .then((res) => {
+          console.log(res);
+          login();
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+      //   setIsLoading(false);
+      //   if (ok) {
+      //     login();
+      //     router.push("/profiles");
+      //   } else {
+      //     console.log(error);
+      //     setNextAuthErrors(["An error occurred"]);
+      //   }
+      // });
     } catch (error) {
       console.log(error);
     }
@@ -55,68 +107,102 @@ const Auth = () => {
             <h2 className="text-white text-4xl mb-8 font-semibold">
               {variant === "login" ? "Sign in" : "Register"}
             </h2>
-            <div className="flex flex-col gap-4">
-              {variant === "register" && (
-                <Input
-                  label="Username"
-                  onChange={(e: any) => {
-                    setName(e.target.value);
-                  }}
-                  id="name"
-                  value={name}
-                />
-              )}
-              <Input
-                label="Email"
-                onChange={(e: any) => {
-                  setEmail(e.target.value);
-                }}
-                id="email"
-                type="email"
-                value={email}
+            <div className="text-white grid w-full place-items-center">
+              <Oval
+                height={80}
+                width={80}
+                color="#4fa94d"
+                wrapperStyle={{}}
+                wrapperClass=""
+                visible={isLoading}
+                ariaLabel="oval-loading"
+                secondaryColor="#4fa94d"
+                strokeWidth={2}
+                strokeWidthSecondary={2}
               />
-              <Input
-                label="Password"
-                onChange={(e: any) => {
-                  setPassword(e.target.value);
-                }}
-                id="password"
-                type="password"
-                value={password}
-              />
-            </div>
-            <button
-              onClick={variant === "login" ? login : register}
-              className="bg-red-600 py-3 text-white rounded-md w-full mt-10 hover:bg-red-700 transition"
-            >
-              {variant === "login" ? "Login" : "Sign up"}
-            </button>
-            <div className="flex flex-row items-center gap-4 mt-8 justify-center">
-              <div
-                onClick={() => signIn("google", { callbackUrl: "/profiles" })}
-                className="w-10 h-10 bg-white rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition"
-              >
-                <FcGoogle size={30} />
-              </div>
-              <div
-                onClick={() => signIn("github", { callbackUrl: "/profiles" })}
-                className="w-10 h-10 bg-white rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition"
-              >
-                <FaGithub size={30} />
-              </div>
             </div>
 
-            <p className="text-neutral-500 mt-12">
-              {variant === "login"
-                ? "First time using Netflix?"
-                : "Already have an account?"}
-              <span
-                onClick={toggleVariant}
-                className="text-white ml-1 hover:underline cursor-pointer"
-              >
-                {variant === "login" ? "Create an account" : "Log in"}
-              </span>
-            </p>
+            {!isLoading && (
+              <>
+                <div className="flex flex-col gap-4">
+                  {validationErrors.map((error, index) => (
+                    <p key={index} className="text-red-500">
+                      {error}
+                    </p>
+                  ))}
+                  {nextAuthErrors.map((error, index) => (
+                    <p key={index} className="text-red-500">
+                      {error}
+                    </p>
+                  ))}
+                  {variant === "register" && (
+                    <Input
+                      label="Username"
+                      onChange={(e: any) => {
+                        setName(e.target.value);
+                      }}
+                      id="name"
+                      value={name}
+                    />
+                  )}
+                  <Input
+                    label="Email"
+                    onChange={(e: any) => {
+                      setEmail(e.target.value);
+                    }}
+                    id="email"
+                    type="email"
+                    value={email}
+                  />
+                  <Input
+                    label="Password"
+                    onChange={(e: any) => {
+                      setPassword(e.target.value);
+                    }}
+                    id="password"
+                    type="password"
+                    value={password}
+                  />
+                </div>
+
+                <button
+                  onClick={variant === "login" ? handleLogin : handleRegister}
+                  className="bg-red-600 py-3 text-white rounded-md w-full mt-10 hover:bg-red-700 transition"
+                >
+                  {variant === "login" ? "Login" : "Sign up"}
+                </button>
+                <div className="flex flex-row items-center gap-4 mt-8 justify-center">
+                  <div
+                    onClick={() =>
+                      signIn("google", { callbackUrl: "/profiles" })
+                    }
+                    className="w-10 h-10 bg-white rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition"
+                  >
+                    <FcGoogle size={30} />
+                  </div>
+                  <div
+                    onClick={() =>
+                      signIn("github", { callbackUrl: "/profiles" })
+                    }
+                    className="w-10 h-10 bg-white rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition"
+                  >
+                    <FaGithub size={30} />
+                  </div>
+                </div>
+
+                <p className="text-neutral-500 mt-12">
+                  {variant === "login"
+                    ? "First time using Netflix?"
+                    : "Already have an account?"}
+                  <span
+                    onClick={toggleVariant}
+                    className="text-white ml-1 hover:underline cursor-pointer"
+                  >
+                    {variant === "login" ? "Create an account" : "Log in"}
+                  </span>
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>

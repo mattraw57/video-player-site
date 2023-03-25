@@ -6,6 +6,8 @@ import GithubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 
+import { validate } from "deep-email-validator";
+
 export default NextAuth({
   providers: [
     GithubProvider({
@@ -30,6 +32,11 @@ export default NextAuth({
         },
       },
       async authorize(credentials) {
+        await validate(credentials?.email || "").then((res) => {
+          console.log(res);
+          if (!res.validators.smtp?.valid) throw new Error("Invalid email");
+        });
+
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email and password required");
         }
