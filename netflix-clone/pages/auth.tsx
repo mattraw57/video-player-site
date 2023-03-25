@@ -80,7 +80,7 @@ const Auth = () => {
         console.log(err);
         setNextAuthErrors([...nextAuthErrors, err.response.data.error || ""]);
       });
-  }, [login, email, name, password]);
+  }, [login, email, name, password, nextAuthErrors]);
 
   return (
     <div className="relative h-full w-full bg-[url('/images/hero.jpg')] bg-no-repeat bg-center bg-fixed bg-cover">
