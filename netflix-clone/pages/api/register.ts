@@ -18,11 +18,12 @@ export default async function handler(
         email,
       },
     });
-    // checkEmailExists &&
-    //   (await validate(email || "").then((validatorRes) => {
-    //     if (!validatorRes.validators.smtp?.valid)
-    //       return res.status(422).json({ error: "Invalid email" });
-    //   }));
+    if (checkEmailExists) {
+      await validate(email || "").then((validatorRes) => {
+        if (!validatorRes.validators.smtp?.valid)
+          return res.status(422).json({ error: "Invalid email" });
+      });
+    }
 
     if (existingUser) {
       return res.status(422).json({ error: "Email taken" });
