@@ -7,7 +7,7 @@ export const isEmail = (email: string) => {
   return false;
 };
 
-export const validateLogin = (email, password) => {
+export const validateLogin = (email: string, password: string) => {
   let errors = [];
 
   if (!email) errors.push("Email field can't be empty");
@@ -17,7 +17,11 @@ export const validateLogin = (email, password) => {
   return errors;
 };
 
-export const validateRegister = (name, email, password) => {
+export const validateRegister = (
+  name: string,
+  email: string,
+  password: string
+) => {
   let errors = [];
 
   if (!name) errors.push("Username field can't be empty");
